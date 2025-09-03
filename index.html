@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sample Selector Test (Dummy Tones)</title>
+  <style>
+    body {
+      background: #111;
+      color: #0ff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 40px;
+    }
+    select {
+      background: #000;
+      color: #0ff;
+      border: 1px solid #0ff;
+      padding: 6px;
+      font-size: 14px;
+      border-radius: 6px;
+      box-shadow: 0 0 6px #0ff;
+    }
+    button {
+      margin-top: 20px;
+      background: #111;
+      border: 1px solid #0ff;
+      color: #0ff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 6px #0ff;
+    }
+    button:hover {
+      background: #0ff;
+      color: #111;
+    }
+  </style>
+</head>
+<body>
+  <h2>Kick Channel Sample Selector (Dummy Tones)</h2>
+  <select id="sampleSelect">
+    <option value="kick">Kick (Low Sine)</option>
+    <option value="snare">Snare (Noise Burst)</option>
+    <option value="hihat">Hi-Hat (High Noise)</option>
+    <option value="strings">Strings (Sawtooth)</option>
+    <option value="violin">Violin (Square)</option>
+  </select>
+
+  <br />
+  <button id="playBtn">Play Selected</button>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playDummySample(type) {
+      const duration = 0.5; // short test sound
+      const now = audioCtx.currentTime;
+
+      if (type === "kick") {
+        // low sine with quick decay
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + duration);
+        gain.gain.setValueAtTime(1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      }
+
+      if (type === "snare") {
+        // noise burst
+        const bufferSize = audioCtx.sampleRate * duration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        noise.connect(gain).connect(audioCtx.destination);
+        noise.start(now);
+        noise.stop(now + duration);
+      }
+
+      if (type === "hihat") {
+        // high-pass filtered noise
+        const bufferSize = audioCtx.sampleRate * duration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "highpass";
+        filter.frequency.value = 8000;
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        noise.connect(filter).connect(gain).connect(audioCtx.destination);
+        noise.start(now);
+        noise.stop(now + duration);
+      }
+
+      if (type === "strings") {
+        // sawtooth sustained note
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      }
+
+      if (type === "violin") {
+        // square wave sustained note
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.value = 330;
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      }
+    }
+
+    document.getElementById("playBtn").addEventListener("click", () => {
+      const select = document.getElementById("sampleSelect");
+      const type = select.value;
+      playDummySample(type);
+      console.log("Playing dummy sample:", type);
+    });
+  </script>
+</body>
+</html>
